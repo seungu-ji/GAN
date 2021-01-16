@@ -39,9 +39,13 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # directory setting
 result_dir_train = os.path.join(result_dir, 'train')
+result_dir_test = os.path.join(result_dir, 'test')
 
 if not os.path.exists(result_dir_train):
     os.makedirs(os.path.join(result_dir_train, 'png'))
+if not os.path.exists(result_dir_test):
+    os.makedirs(os.path.join(result_dir_test, 'png'))
+    os.makedirs(os.path.join(result_dir_test, 'numpy'))
 
 ## Train
 if mode == 'train':
@@ -52,7 +56,14 @@ if mode == 'train':
 
     num_data_train = len(dataset_train)
     num_batch_train = np.ceil(num_data_train / batch_size)
+else:
+    transform_test = transforms.Compose([RandomCrop(shape=(ny, nx))])
 
+    dataset_test = Dataset(data_dir=data_dir, transform=transform_test, task=task, opts=opts)
+    loader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=False, num_workers=4)
+
+    num_data_test = len(dataset_test)
+    num_batch_test = np.ceil(num_data_test / batch_size)
 
 ## Network setting
 if network == 'DCGAN':
@@ -62,6 +73,7 @@ if network == 'DCGAN':
     # 네트워크의 모든 weights 초기화 (Normal(mean=0, standard deviation=0.02))
     init_weights(netG, init_type='normal', init_gain=0.02)
     init_weights(netD, init_type='normal', init_gain=0.02)
+
 
 ## Loss function
 fn_loss = nn.BCELoss().to(device)
@@ -160,3 +172,24 @@ if mode == 'train':
             save(ckpt_dir=ckpt_dir, netG=netG, netD=netD, optimG=optimG, optimD=optimD, epoch=epoch)
 
     writer_train.close()
+# TEST MODE
+else:
+    netG, netD, optimG, optimD, st_epoch = laod(ckpt_dir, netG=netG, netD=netD, optimG=optimG, optimD=optimD)
+
+    with torch.no_grad():
+        netG.eval()
+
+        imput = torch.randn(batch_size, 100, 1, 1).to(device)
+
+        output = netG(input)
+
+        output = fn_tonumpy(fn_denorm(output, mean=0.5, std=0.5))
+
+        for j in range(output.shape[0]):
+            id = j
+
+            output_ = output[j]
+            np.save(os.path.join(result_dir_test, 'numpy', '%04d_output.npy' % id), output_)
+
+            output_ = np.clip(output_, a_min=0, a_max=1)
+            plt.imsave(os.path.join(result_dir_test, 'png', '%04d_output.png' % id), output_, cmap=cmap)
