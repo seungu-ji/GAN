@@ -4,6 +4,18 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+## Network grad setting
+def set_requires_grad(net, requires_grad=False):
+    if not isinstance(nets, list):
+        nets = [nets]
+
+    for net in nets:
+        if net is not None:
+            for param in net.parameters():
+                param.requires_grad = requires_grad
+
+
+
 ## Network weights 초기화
 def init_weights(net, init_type='normal', init_gain=0.02):
     def init_func(m):
@@ -30,7 +42,7 @@ def init_weights(net, init_type='normal', init_gain=0.02):
 
 
 ## Network save
-def save(ckpt_dir, netG, netD, optimG, optimD, optim, epoch):
+def save(ckpt_dir, netG, netD, optimG, optimD, epoch):
     if not os.path.exists(ckpt_dir):
         os.makedirs(ckpt_dir)
 

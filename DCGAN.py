@@ -27,6 +27,7 @@ class DCGAN(nn.Module):
         x = self.dec3(x)
         x = self.dec4(x)
         x = self.dec5(x)
+
         x = self.tanh(x)
 
         return x
@@ -49,6 +50,7 @@ class Discriminator(nn.Module):
         x = self.enc3(x)
         x = self.enc4(x)
         x = self.enc5(x)
+        
         x = self.sig(x)
 
         return x

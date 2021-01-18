@@ -155,7 +155,7 @@ if mode == 'train':
             if batch % 20 == 0:
                 # Tensorboard save
                 # output은 tanh 때문에 -1 ~ 1까지의 값이 나오기 때문에 denorm 사용
-                output = fn_tonumpy(fn_denorm(output, mean=0.5, std-0.5)).squeeze()
+                output = fn_tonumpy(fn_denorm(output, mean=0.5, std=0.5)).squeeze()
                 output = np.clip(output, a_min=0, a_max=1)
 
                 id = num_batch_train * (epoch - 1) + batch
@@ -174,7 +174,7 @@ if mode == 'train':
     writer_train.close()
 # TEST MODE
 else:
-    netG, netD, optimG, optimD, st_epoch = laod(ckpt_dir, netG=netG, netD=netD, optimG=optimG, optimD=optimD)
+    netG, netD, optimG, optimD, st_epoch = load(ckpt_dir, netG=netG, netD=netD, optimG=optimG, optimD=optimD)
 
     with torch.no_grad():
         netG.eval()
