@@ -9,9 +9,10 @@ Architecture guidelines for stable Deep Convolutional GANs
 import torch
 import torch.nn as nn
 
-class DCGAN(nn.Module):
+# DCGAN Generator
+class Generator(nn.Module):
     def __init__(self, in_channels, out_channels, nker=64, norm='bnorm'):
-        super(DCGAN, self).__init__()
+        super(Generator, self).__init__()
 
         # Linear vector (100,)과 matrix (100, 1, 1)의 정보량은 동일
         self.dec1 = DECBR2d(1 * in_channels, 8 * nker, kernel_size=4, stride=1, padding=0, norm=norm, relu=0.0, bias=False)
@@ -33,6 +34,7 @@ class DCGAN(nn.Module):
         return x
 
 
+# DCGAN Discriminator
 class Discriminator(nn.Module):
     def __init__(self, in_channels, out_channels, nker=64, norm='bnorm'):
         super(Discriminator, self).__init__()

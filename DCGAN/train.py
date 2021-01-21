@@ -67,7 +67,7 @@ else:
 
 ## Network setting
 if network == 'DCGAN':
-    netG = DCGAN(in_channels=100, out_channels=nch, nker=nker).to(device)
+    netG = Generator(in_channels=100, out_channels=nch, nker=nker).to(device)
     netD = Discriminator(in_channels=nch, out_channels=1, nker=nker).to(device)
 
     # 네트워크의 모든 weights 초기화 (Normal(mean=0, standard deviation=0.02))
