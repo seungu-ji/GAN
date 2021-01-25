@@ -111,8 +111,8 @@ if mode == 'train':
         netD.train()
 
         lose_G_train = []
-        loss_D_real_train = []
-        loss_D_fake_train = []
+        # loss_D_real_train = []
+        # loss_D_fake_train = []
 
         for batch, data in enumerate(loader_train, 1):
             # forward pass
@@ -128,9 +128,10 @@ if mode == 'train':
             pred_real = netD(label) # True = torch.ones()
             pred_fake = netD(output.detach()) # False = torch.zeros()
 
-            loss_D_real = fn_loss(pred_real, torch.ones_like(pred_real))
-            loss_D_fake = fn_loss(pred_fake, torch.zeros_like(pred_fake))
-            loss_D = (loss_D_real + loss_D_fake) / 2
+            # loss_D_real = fn_loss(pred_real, torch.ones_like(pred_real))
+            # loss_D_fake = fn_loss(pred_fake, torch.zeros_like(pred_fake))
+            # Adversarial loss
+            loss_D = -torch.mean(pred_real) + torch.mean(pred_fake)
             
             loss_D.backward()
 
@@ -157,11 +158,11 @@ if mode == 'train':
 
                 # loss function
                 loss_G_train += [loss_G.item()]
-                loss_D_real_train += [loss_D_real.item()]
-                loss_D_fake_train += [loss_D_fake.item()]
-
-                print("TRAIN: EPOCH %04d / %04d | BATCH %04d / %04d | GEN %.4f | DISC REAL: %.4f | DISC FAKE: %.4f"
-                    % (epoch, num_epoch, batch, num_batch_train, np.mean(loss_G_train), np.mean(loss_D_real_train), np.mean(loss_D_fake_train)))
+                # loss_D_real_train += [loss_D_real.item()]
+                # loss_D_fake_train += [loss_D_fake.item()]
+                loss_D_train += [loss_D.item()]
+                print("TRAIN: EPOCH %04d / %04d | BATCH: %04d / %04d | GEN: %.4f | CRITIC: %.4f"
+                    % (epoch, num_epoch, batch, num_batch_train, np.mean(loss_G_train), np.mean(loss_D_train)))
 
             if batch % 20 == 0:
                 # Tensorboard save
@@ -176,8 +177,8 @@ if mode == 'train':
                 writer_train.add_image('output', output, id, dataformats='NHWC')
 
         writer_train.add_scalar('loss_G', np.mean(loss_G_train), epoch)
-        writer_train.add_scalar('loss_D_real', np.mean(loss_D_real_train), epoch)
-        writer_train.add_scalar('loss_D_fake', np.mean(loss_D_fake_train), epoch)
+        #writer_train.add_scalar('loss_D_real', np.mean(loss_D_real_train), epoch)
+        #writer_train.add_scalar('loss_D_fake', np.mean(loss_D_fake_train), epoch)
 
         if epoch % 20 == 0:
             save(ckpt_dir=ckpt_dir, netG=netG, netD=netD, optimG=optimG, optimD=optimD, epoch=epoch)
