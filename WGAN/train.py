@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from DCGAN import *
+from WGAN import *
 from util import *
 from data_loader import *
 
@@ -25,7 +25,7 @@ ckpt_dir = './checkpoint'
 log_dir = './log'
 result_dir = './result'
 
-task = 'DCGAN'
+task = 'WGAN'
 opts = ['bilinear', 4.0, 0]
 
 ny = 64
@@ -36,7 +36,7 @@ nker = 128
 num_critic = 5
 weight_clip = 0.01
 
-network = 'DCGAN'
+network = 'WGAN'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -69,7 +69,7 @@ else:
     num_batch_test = np.ceil(num_data_test / batch_size)
 
 ## Network setting
-if network == 'DCGAN':
+if network == 'WGAN':
     netG = Generator(in_channels=100, out_channels=nch, nker=nker).to(device)
     # netD => (Discriminator => Critic)
     netD = Discriminator(in_channels=nch, out_channels=1, nker=nker).to(device)
