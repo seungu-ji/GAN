@@ -43,6 +43,27 @@ parser.add_argument("--network", default="DCGAN", choices=["DCGAN"], type=str, d
 
 args = parser.parse_args()
 
+mode = args.mode
+train_continue = args.train_continue
+
+lr = args.lr
+batch_size = args.batch_size
+num_epoch = args.num_epoch
+
+data_dir = args.data_dir
+ckpt_dir = args.ckpt_dir
+log_dir = args.log_dir
+result_dir = args.result_dir
+
+task = args.task
+opts = [args.opts[0], np.asarray(args.opts[1:]).astype(np.float)]
+
+ny = args.ny
+nx = args.nx
+nch = args.nch
+nker = args.nker
+
+network = args.network
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

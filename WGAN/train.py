@@ -31,7 +31,7 @@ parser.add_argument("--ckpt_dir", default="./checkpoint", type=str, dest="ckpt_d
 parser.add_argument("--log_dir", default="./log", type=str, dest="log_dir")
 parser.add_argument("--result_dir", default="./result", type=str, dest="result_dir")
 
-parser.add_argument("--task", default="WGAN", choices=['WGAN'], type=str, dest="task")
+parser.add_argument("--task", default="WGAN-GP", choices=['WGAN-GP'], type=str, dest="task")
 parser.add_argument('--opts', nargs='+', default=['bilinear', 4.0, 0], dest='opts')
 
 parser.add_argument("--ny", default=64, type=int, dest="ny")
@@ -42,9 +42,34 @@ parser.add_argument("--nker", default=128, type=int, dest="nker")
 parser.add_argument("--num_critic", default=5, type=int, dest="num_critic")
 parser.add_argument("--weight_clip", default=0.01, type=int, dest="weight_clip")
 
-parser.add_argument("--network", default="WGAN", choices=["WGAN"], type=str, dest="network")
+parser.add_argument("--network", default="WGAN-GP", choices=["WGAN-GP"], type=str, dest="network")
 
 args = parser.parse_args()
+
+mode = args.mode
+train_continue = args.train_continue
+
+lr = args.lr
+batch_size = args.batch_size
+num_epoch = args.num_epoch
+
+data_dir = args.data_dir
+ckpt_dir = args.ckpt_dir
+log_dir = args.log_dir
+result_dir = args.result_dir
+
+task = args.task
+opts = [args.opts[0], np.asarray(args.opts[1:]).astype(np.float)]
+
+ny = args.ny
+nx = args.nx
+nch = args.nch
+nker = args.nker
+
+num_critic = args.num_critic
+weight_clip = args.weight_clip
+
+network = args.network
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
