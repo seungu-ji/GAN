@@ -114,7 +114,7 @@ if network == 'WGAN':
 
 
 ## Loss function
-fn_loss = nn.BCELoss().to(device)
+# fn_loss = nn.BCELoss().to(device)
 
 ## Optimizer
 # optimizer = RMSprop
@@ -153,19 +153,18 @@ if mode == 'train':
             label = data['label'].to(device)
             input = torch.randn(label.shape[0], 100, 1, 1,).to(device) # (B, C, H, W)
             
+            # generate fake image
             output = netG(input)
 
             # backward netD
             set_requires_grad(netD, True)
             optimD.zero_grad()
             
-            pred_real = netD(label) # True = torch.ones()
-            pred_fake = netD(output.detach()) # False = torch.zeros()
+            # pred_real = netD(label) # True = torch.ones()
+            # pred_fake = netD(output.detach()) # False = torch.zeros()
 
-            # loss_D_real = fn_loss(pred_real, torch.ones_like(pred_real))
-            # loss_D_fake = fn_loss(pred_fake, torch.zeros_like(pred_fake))
             # Adversarial loss
-            loss_D = -torch.mean(pred_real) + torch.mean(pred_fake)
+            loss_D = -torch.mean(netD(label)) + torch.mean(netD(output.deatch()))
             
             loss_D.backward()
 
@@ -184,7 +183,7 @@ if mode == 'train':
 
                 pred_fake = netD(output)
 
-                loss_G = fn_loss(pred_fake, torch.ones_like(pred_fake))
+                loss_G = -torch.mean(pred_fake)
 
                 loss_G.backward()
 
