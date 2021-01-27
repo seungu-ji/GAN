@@ -12,7 +12,7 @@ from data_loader import *
 
 from torchvision import transforms
 
-import parser
+import argparse
 
 ## variable setting
 parser = argparse.ArgumentParser(description="DCGAN parameter",

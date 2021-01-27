@@ -12,31 +12,40 @@ from data_loader import *
 
 from torchvision import transforms
 
+import argparse
+
 ## variable setting
-mode = 'train'
-train_continue = 'on'
+parser = argparse.ArgumentParser(description="WGAN parameter",
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-lr = 2e-4
-batch_size = 64
-num_epoch = 200
+parser.add_argument("--mode", default="train", choices=["train", "test"], type=str, dest="mode")
+parser.add_argument("--train_continue", default="on", choices=["on", "off"], type=str, dest="train_continue")
 
-data_dir = './dataset/img_align_celeba'
-ckpt_dir = './checkpoint'
-log_dir = './log'
-result_dir = './result'
+parser.add_argument("--lr", default=2e-4, type=float, dest="lr")
+parser.add_argument("--batch_size", default=64, type=int, dest="batch_size")
+parser.add_argument("--num_epoch", default=200, type=int, dest="num_epoch")
 
-task = 'WGAN'
-opts = ['bilinear', 4.0, 0]
 
-ny = 64
-nx = 64
-nch = 3
-nker = 128
+parser.add_argument("--data_dir", default="./datasets/img_align_celeba", type=str, dest="data_dir")
+parser.add_argument("--ckpt_dir", default="./checkpoint", type=str, dest="ckpt_dir")
+parser.add_argument("--log_dir", default="./log", type=str, dest="log_dir")
+parser.add_argument("--result_dir", default="./result", type=str, dest="result_dir")
 
-num_critic = 5
-weight_clip = 0.01
+parser.add_argument("--task", default="WGAN", choices=['WGAN'], type=str, dest="task")
+parser.add_argument('--opts', nargs='+', default=['bilinear', 4.0, 0], dest='opts')
 
-network = 'WGAN'
+parser.add_argument("--ny", default=64, type=int, dest="ny")
+parser.add_argument("--nx", default=64, type=int, dest="nx")
+parser.add_argument("--nch", default=3, type=int, dest="nch")
+parser.add_argument("--nker", default=128, type=int, dest="nker")
+
+parser.add_argument("--num_critic", default=5, type=int, dest="num_critic")
+parser.add_argument("--weight_clip", default=0.01, type=int, dest="weight_clip")
+
+parser.add_argument("--network", default="DCGAN", choices=["DCGAN"], type=str, dest="network")
+
+args = parser.parse_args()
+
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
