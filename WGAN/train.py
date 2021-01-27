@@ -42,7 +42,7 @@ parser.add_argument("--nker", default=128, type=int, dest="nker")
 parser.add_argument("--num_critic", default=5, type=int, dest="num_critic")
 parser.add_argument("--weight_clip", default=0.01, type=int, dest="weight_clip")
 
-parser.add_argument("--network", default="DCGAN", choices=["DCGAN"], type=str, dest="network")
+parser.add_argument("--network", default="WGAN", choices=["WGAN"], type=str, dest="network")
 
 args = parser.parse_args()
 
