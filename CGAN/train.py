@@ -247,8 +247,8 @@ else:
         for j in range(output.shape[0]):
             id = j
 
-            output_ = output[j]
+            output_ = np.squeeze(output[j])
             np.save(os.path.join(result_dir_test, 'numpy', '%04d_output.npy' % id), output_)
 
-            #output_ = np.clip(output_, a_min=0, a_max=1)
-            #plt.imsave(os.path.join(result_dir_test, 'png', '%04d_output.png' % id), output_, cmap=cmap)
+            output_ = np.clip(output_, a_min=0, a_max=1)
+            plt.imsave(os.path.join(result_dir_test, 'png', '%04d_output.png' % id), output_, cmap=cmap)
