@@ -237,9 +237,10 @@ else:
     with torch.no_grad():
         netG.eval()
 
-        input = torch.randn(batch_size, 100, 1, 1)
+        z = Variable(torch.FloatTensor(np.random.normal(0, 1, (batch_size, 100)))).to(device)
+        g_label = Variable(torch.LongTensor(np.random.randint(0, num_class, batch_size))).to(device)
 
-        output = netG(input)
+        output = netG(z, g_label)
 
         output = fn_tonumpy(fn_denorm(output, mean=0.5, std=0.5))
 
@@ -249,5 +250,5 @@ else:
             output_ = output[j]
             np.save(os.path.join(result_dir_test, 'numpy', '%04d_output.npy' % id), output_)
 
-            output_ = np.clip(output_, a_min=0, a_max=1)
-            plt.imsave(os.path.join(result_dir_test, 'png', '%04d_output.png' % id), output_, cmap=cmap)
+            #output_ = np.clip(output_, a_min=0, a_max=1)
+            #plt.imsave(os.path.join(result_dir_test, 'png', '%04d_output.png' % id), output_, cmap=cmap)
