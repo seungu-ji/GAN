@@ -116,8 +116,8 @@ else:
 
 ## Network setting
 if network == 'CGAN':
-    netG = Generator(latent_dim=100, num_class=10, nker=nker).to(device)
-    netD = Discriminator(latent_dim=100, num_class=10, nker=nker).to(device)
+    netG = Generator(latent_dim=100, num_class=num_class, nker=nker).to(device)
+    netD = Discriminator(latent_dim=100, num_class=num_class, nker=nker).to(device)
 
     # 네트워크의 모든 weights 초기화 (Normal(mean=0, standard deviation=0.02))
     #init_weights(netG, init_type='normal', init_gain=0.02)
