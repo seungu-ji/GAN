@@ -7,9 +7,6 @@ import torch.autograd as autograd
 
 from torch.autograd import Variable
 
-# discriminator => netD
-# label.data, output.data
-
 # Calculates the gradient penalty loss for WGAN GP
 def compute_gradient_penalty(discriminator, real_samples, fake_samples):
     Tensor = torch.FloatTensor

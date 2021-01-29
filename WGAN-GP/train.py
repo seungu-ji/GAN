@@ -227,7 +227,7 @@ else:
     with torch.no_grad():
         netG.eval()
 
-        imput = torch.randn(batch_size, 100, 1, 1).to(device)
+        input = torch.randn(batch_size, 100, 1, 1).to(device)
 
         output = netG(input)
 
