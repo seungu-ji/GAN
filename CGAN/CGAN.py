@@ -5,7 +5,7 @@ import torch.nn as nn
 # in_features = latent_dim + num_class
 # out_features = int(np.prod(channels, img_size, img_size))
 class Generator(nn.Module):
-    def __init__(self, in_features, out_features, nker=128, norm='bnorm', latent_dim=100, num_class=10):
+    def __init__(self,  latent_dim=100, num_class=10, nker=128, norm='bnorm'):
         super(Generator, self).__init__()
 
         self.label_emb = nn.Embedding(num_class, num_class)
@@ -35,7 +35,7 @@ class Generator(nn.Module):
 
 # CGAN Discriminator
 class Discriminator(nn.Module):
-    def __init__(self, in_features, out_features, nker=128, norm='bnorm', latent_dim=100, num_class=10):
+    def __init__(self,  latent_dim=100, num_class=10, nker=128, norm='bnorm'):
         super(Discriminator, self).__init__()
 
         self.label_emb = nn.Embedding(num_class, num_class)

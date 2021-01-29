@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from torch.autograd import Variable
+from torchvision import datasets
 
 from CGAN import *
 from util import *
@@ -25,6 +27,7 @@ parser.add_argument("--lr", default=0.0002, type=float, dest="lr")
 parser.add_argument("--batch_size", default=128, type=int, dest="batch_size")
 parser.add_argument("--num_epoch", default=5, type=int, dest="num_epoch")
 
+parser.add_argument("--num_class", default=5, type=int, dest="num_class")
 
 parser.add_argument("--data_dir", default="./datasets/img_align_celeba", type=str, dest="data_dir")
 parser.add_argument("--ckpt_dir", default="./checkpoint", type=str, dest="ckpt_dir")
@@ -49,6 +52,8 @@ train_continue = args.train_continue
 lr = args.lr
 batch_size = args.batch_size
 num_epoch = args.num_epoch
+
+num_class = args.num_class
 
 data_dir = args.data_dir
 ckpt_dir = args.ckpt_dir
@@ -79,20 +84,36 @@ if not os.path.exists(result_dir_test):
 
 ## Train
 if mode == 'train':
-    transform_train = transforms.Compose([Resize(shape=(ny, nx, nch)), Normalization(mean=0.5, std=0.5)])
+    dataloader = torch.utils.data.DataLoader(
+        datasets.MNIST(
+            "./data/mnist",
+            train=True,
+            download=True,
+            transform=transforms.Compose(
+                [Resize(shape=(ny, nx, nch)), ToTensor(), Normalization(mean=0.5, std=0.5)]
+            ),
+        ),
+        batch_size=batch_size,
+        shuffle=True,
+    )
 
-    dataset_train = Dataset(data_dir=data_dir, transform=transform_train, task=task, opts=opts)
-    loader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=4)
-
-    num_data_train = len(dataset_train)
+    num_data_train = len(dataloader)
     num_batch_train = np.ceil(num_data_train / batch_size)
 else:
-    transform_test = transforms.Compose([RandomCrop(shape=(ny, nx))])
+    dataloader = torch.utils.data.DataLoader(
+        datasets.MNIST(
+            "./data/mnist",
+            train=False,
+            download=False,
+            transform=transforms.Compose(
+                [Resize(shape=(ny, nx, nch)), ToTensor(), Normalization(mean=0.5, std=0.5)]
+            ),
+        ),
+        batch_size=batch_size,
+        shuffle=False,
+    )
 
-    dataset_test = Dataset(data_dir=data_dir, transform=transform_test, task=task, opts=opts)
-    loader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=False, num_workers=4)
-
-    num_data_test = len(dataset_test)
+    num_data_test = len(dataloader)
     num_batch_test = np.ceil(num_data_test / batch_size)
 
 ## Network setting
@@ -140,39 +161,46 @@ if mode == 'train':
         loss_D_real_train = []
         loss_D_fake_train = []
 
-        for batch, data in enumerate(loader_train, 1):
-            # forward pass
-            label = data['label'].to(device)
-            input = torch.randn(label.shape[0], 100, 1, 1,).to(device) # (B, C, H, W)
-            
-            output = netG(input)
+        for batch, (imgs, labels) in enumerate(dataloader):
+            # True
+            valid = Variable(FloatTensor(batch_size, 1).fill_(1.0), requires_grad=False)
+            # False
+            fake = Variable(FloatTensor(batch_size, 1).fill_(0.0), requires_grad=False)
 
-            # backward netD
-            set_requires_grad(netD, True)
+            # Configure input
+            real_imgs = Variable(imgs.type(FloatTensor))
+            labels = Variable(labels.type(LongTensor))
+        
+            ## Train Generator
+            z = Variable(torch.FloatTensor(np.random.normal(0, 1, (batch_size, 100)))).to(device)
+            g_label = Variable(torch.LongTensor(np.random.randint(0, num_class, batch_size))).to(device)
+
+            optimG.zero_grad()
+
+            # ouput = generated image
+            output = netG(z, g_label)
+
+            # Loss measures generator's ability to fool the discriminator
+            validyity = netD(output, g_label)
+            loss_G = fn_loss(validyity, valid)
+
+            loss_G.backward()
+            optimG.step()
+
+            ## Train Discriminator
+            # set_requires_grad(netD, True)
             optimD.zero_grad()
             
-            pred_real = netD(label) # True = torch.ones()
-            pred_fake = netD(output.detach()) # False = torch.zeros()
+            pred_real = netD(real_imgs, labels) # True = torch.ones()
+            pred_fake = netD(output.detach(), g_label) # False = torch.zeros()
 
-            loss_D_real = fn_loss(pred_real, torch.ones_like(pred_real))
-            loss_D_fake = fn_loss(pred_fake, torch.zeros_like(pred_fake))
+            loss_D_real = fn_loss(pred_real, valid)
+            loss_D_fake = fn_loss(pred_fake, fake)
             loss_D = (loss_D_real + loss_D_fake) / 2
             
             loss_D.backward()
 
             optimD.step()
-
-            # backward netG
-            set_requires_grad(netD, False)
-            optimG.zero_grad()
-
-            pred_fake = netD(output)
-
-            loss_G = fn_loss(pred_fake, torch.ones_like(pred_fake))
-
-            loss_G.backward()
-
-            optimG.step()
 
             # loss function
             loss_G_train += [loss_G.item()]
@@ -209,7 +237,7 @@ else:
     with torch.no_grad():
         netG.eval()
 
-        imput = torch.randn(batch_size, 100, 1, 1).to(device)
+        input = torch.randn(batch_size, 100, 1, 1).to(device)
 
         output = netG(input)
 
