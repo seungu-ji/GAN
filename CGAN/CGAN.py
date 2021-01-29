@@ -43,7 +43,7 @@ class Discriminator(nn.Module):
         self.enc1 = LDBR2d(num_class + (1 * 32 * 32), 4 * nker, dropout=False, norm=None, relu=0.2)
         self.enc2 = LDBR2d(4 * nker, 4 * nker, dropout=True, norm=None, relu=0.2)
         self.enc3 = LDBR2d(4 * nker, 4 * nker, dropout=True, norm=None, relu=0.2)
-        self.env4 = LDBR2d(4 * nker, 1, dropout=False, norm=None, relu=None)
+        self.enc4 = LDBR2d(4 * nker, 1, dropout=False, norm=None, relu=None)
         # self.sig = nn.Sigmoid()
 
     # y = label
@@ -76,7 +76,7 @@ class LDBR2d(nn.Module):
             elif norm == 'inorm':
                 layers += [nn.InstanceNorm1d(num_features=out_features)]
 
-        if relu >= 0.0:
+        if relu is not None and relu >= 0.0:
             layers += [nn.ReLU() if relu == 0 else nn.LeakyReLU(relu)]
 
         self.ldbr = nn.Sequential(*layers)

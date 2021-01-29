@@ -25,9 +25,9 @@ parser.add_argument("--train_continue", default="on", choices=["on", "off"], typ
 
 parser.add_argument("--lr", default=0.0002, type=float, dest="lr")
 parser.add_argument("--batch_size", default=128, type=int, dest="batch_size")
-parser.add_argument("--num_epoch", default=5, type=int, dest="num_epoch")
+parser.add_argument("--num_epoch", default=20, type=int, dest="num_epoch")
 
-parser.add_argument("--num_class", default=5, type=int, dest="num_class")
+parser.add_argument("--num_class", default=10, type=int, dest="num_class")
 
 parser.add_argument("--data_dir", default="./datasets/img_align_celeba", type=str, dest="data_dir")
 parser.add_argument("--ckpt_dir", default="./checkpoint", type=str, dest="ckpt_dir")
@@ -90,15 +90,14 @@ if mode == 'train':
             train=True,
             download=True,
             transform=transforms.Compose(
-                [Resize(shape=(ny, nx, nch)), ToTensor(), Normalization(mean=0.5, std=0.5)]
+                [transforms.Resize(nx), transforms.ToTensor(), transforms.Normalize([0.5], [0.5])]
             ),
         ),
         batch_size=batch_size,
         shuffle=True,
     )
 
-    num_data_train = len(dataloader)
-    num_batch_train = np.ceil(num_data_train / batch_size)
+    num_batch_train = len(dataloader)
 else:
     dataloader = torch.utils.data.DataLoader(
         datasets.MNIST(
@@ -106,24 +105,23 @@ else:
             train=False,
             download=False,
             transform=transforms.Compose(
-                [Resize(shape=(ny, nx, nch)), ToTensor(), Normalization(mean=0.5, std=0.5)]
+                [transforms.Resize(nx), transforms.ToTensor(), transforms.Normalize([0.5], [0.5])]
             ),
         ),
         batch_size=batch_size,
         shuffle=False,
     )
 
-    num_data_test = len(dataloader)
-    num_batch_test = np.ceil(num_data_test / batch_size)
+    num_batch_test = len(dataloader)
 
 ## Network setting
 if network == 'CGAN':
-    netG = Generator(in_channels=100, out_channels=nch, nker=nker).to(device)
-    netD = Discriminator(in_channels=nch, out_channels=1, nker=nker).to(device)
+    netG = Generator(latent_dim=100, num_class=10, nker=nker).to(device)
+    netD = Discriminator(latent_dim=100, num_class=10, nker=nker).to(device)
 
     # 네트워크의 모든 weights 초기화 (Normal(mean=0, standard deviation=0.02))
-    init_weights(netG, init_type='normal', init_gain=0.02)
-    init_weights(netD, init_type='normal', init_gain=0.02)
+    #init_weights(netG, init_type='normal', init_gain=0.02)
+    #init_weights(netD, init_type='normal', init_gain=0.02)
 
 
 ## Loss function
@@ -157,19 +155,21 @@ if mode == 'train':
         netG.train()
         netD.train()
 
-        lose_G_train = []
+        loss_G_train = []
         loss_D_real_train = []
         loss_D_fake_train = []
 
         for batch, (imgs, labels) in enumerate(dataloader):
+
+            batch_size = imgs.shape[0]
             # True
-            valid = Variable(FloatTensor(batch_size, 1).fill_(1.0), requires_grad=False)
+            valid = Variable(torch.FloatTensor(batch_size, 1).fill_(1.0), requires_grad=False).to(device)
             # False
-            fake = Variable(FloatTensor(batch_size, 1).fill_(0.0), requires_grad=False)
+            fake = Variable(torch.FloatTensor(batch_size, 1).fill_(0.0), requires_grad=False).to(device)
 
             # Configure input
-            real_imgs = Variable(imgs.type(FloatTensor))
-            labels = Variable(labels.type(LongTensor))
+            real_imgs = Variable(imgs.type(torch.FloatTensor)).to(device)
+            labels = Variable(labels.type(torch.LongTensor)).to(device)
         
             ## Train Generator
             z = Variable(torch.FloatTensor(np.random.normal(0, 1, (batch_size, 100)))).to(device)
@@ -220,7 +220,7 @@ if mode == 'train':
 
                 plt.imsave(os.path.join(result_dir_train, 'png', '%04d_output.png' % id), output[0].squeeze(), cmap=cmap)
 
-                writer_train.add_image('output', output, id, dataformats='NHWC')
+                # writer_train.add_image('output', output, id, dataformats='NHWC')
 
         writer_train.add_scalar('loss_G', np.mean(loss_G_train), epoch)
         writer_train.add_scalar('loss_D_real', np.mean(loss_D_real_train), epoch)
@@ -237,7 +237,7 @@ else:
     with torch.no_grad():
         netG.eval()
 
-        input = torch.randn(batch_size, 100, 1, 1).to(device)
+        input = torch.randn(batch_size, 100, 1, 1)
 
         output = netG(input)
 
