@@ -136,7 +136,7 @@ if mode == 'train':
         netG.train()
         netD.train()
 
-        lose_G_train = []
+        loss_G_train = []
         loss_D_real_train = []
         loss_D_fake_train = []
 
