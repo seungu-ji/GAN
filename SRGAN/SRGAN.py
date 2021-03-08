@@ -7,12 +7,12 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         # Linear vector (100,)과 matrix (100, 1, 1)의 정보량은 동일
-        self.enc = CBR2d(in_channels, nker, kernel_size=9, stride=1, padding=4, norm=None, relu=0.0, bias=True)
+        self.enc = CBR2d(in_channels, nker, kernel_size=9, stride=1, padding=4, norm=None, relu='prelu', bias=True)
         
         resblocks = []
 
         for i in range(nblock):
-            res += [ResBlock(nker, nker, kernel_size=3, stride=1, padding=1, bias=True, norm=norm, relu=0.0)]
+            res += [ResBlock(nker, nker, kernel_size=3, stride=1, padding=1, bias=True, norm=norm, relu='prelu')]
 
         self.res = nn.Sequential(*resblocks)
 
@@ -21,13 +21,14 @@ class Generator(nn.Module):
         ps1 = []
         ps1 += [nn.Conv2d(in_channels=nker, out_channels=4 * nker, kernel_size=3, stride=1, padding=1)]
         ps1 += [PixelShuffle(ry=2, rx=2)]
-        ps1 += [nn.ReLU()]
+        ps1 += [nn.PReLU]
         self.ps1 = nn.Sequential(*ps1)
 
         ps2 = []
         ps2 += [nn.Conv2d(in_channels=nker, out_channels=4 * nker, kernel_size=3, stride=1, padding=1)]
         ps2 += [PixelShuffle(ry=2, rx=2)]
-        ps2 += [nn.ReLU()]
+        ps2 += [nn.PReLU()]
+        self.ps2 = nn.Sequential(*ps2)
 
         self.fc = CBR2d(nker, out_channels, kernel_size=9, stride=1, padding=4, bias=True, norm=None, relu=None)
 
@@ -49,28 +50,36 @@ class Generator(nn.Module):
         return x
         
 
-"""# DCGAN Discriminator
+# SRGAN Discriminator
 class Discriminator(nn.Module):
     def __init__(self, in_channels, out_channels, nker=64, norm='bnorm'):
         super(Discriminator, self).__init__()
 
-        self.enc1 = CBR2d(1 * in_channels, 1 * nker, kernel_size=4, stride=2, padding=1, norm=norm, relu=0.2, bias=False)
-        self.enc2 = CBR2d(1 * nker, 2 * nker, kernel_size=4, stride=2, padding=1, norm=norm, relu=0.2, bias=False)
-        self.enc3 = CBR2d(2 * nker, 4 * nker, kernel_size=4, stride=2, padding=1, norm=norm, relu=0.2, bias=False)
-        self.enc4 = CBR2d(4 * nker, 8 * nker, kernel_size=4, stride=2, padding=1, norm=norm, relu=0.2, bias=False)
-        self.enc5 = CBR2d(8 * nker, out_channels, kernel_size=4, stride=2, padding=1, norm=None, relu=None, bias=False)
+        discriminatorblocks = []
+
+        for i, nker in enumerate([64, 128, 256, 512]):
+            discriminatorblocks += [DiscriminatorBlock(in_channels, nker, first_block=(i == 0))]
+            in_channels = nker
+
+        self.discriminatorblocks = nn.Sequential(*discriminatorblocks)
+        
+        self.fc = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(nker, 2 * nker, kernel_size=1),
+            nn.LeakyReLU(0.2),
+            nn.Conv2d(2 * nker, out_channels, kernel_size=1)
+        )
+
         self.sig = nn.Sigmoid()
 
     def forward(self, x):
-        x = self.enc1(x)
-        x = self.enc2(x)
-        x = self.enc3(x)
-        x = self.enc4(x)
-        x = self.enc5(x)
-        
-        x = self.sig(x)
+        batch_size = x.size(0)
 
-        return x"""
+        x = self.discriminatorblocks(x)
+        
+        x = self.fc(x)
+
+        return self.sig(x.view(batch_size))
 
 
 class PixelShuffle(nn.Module):
@@ -128,27 +137,26 @@ class ResBlock(nn.Module):
         return x + self.resblock(x)
 
 
-class DECBR2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=True, norm='bnorm', relu=0.0):
+class DiscriminatorBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=True, norm='bnorm', relu=0.0, first_block=False):
         super().__init__()
 
         layers = []
-        layers += [nn.ConvTranspose2d(in_channels=in_channels, out_channels=out_channels,
-                                    kernel_size=kernel_size, stride=stride, padding=padding, bias=bias)]
 
-        if not norm is None:
-            if norm == 'bnorm':
+        layers += [CBR2d(in_channels, out_channels, kernel_size=kernel_size,
+                stride=stride, padding=padding, bias=bias, norm=None, relu=None)]
+        if not first_block:
                 layers += [nn.BatchNorm2d(num_features=out_channels)]
-            elif norm == 'inorm':
-                layers += [nn.InstanceNorm2d(num_features=out_channels)]
+        layers += [nn.LeakyReLU(0.2, inplace=True)]
+        
+        layers += [CBR2d(in_channels, out_channels, kernel_size=kernel_size,
+                stride=2, padding=padding, bias=bias, norm=norm, relu=0.2)]
 
-        if not relu is None and relu >= 0.0:
-            layers += [nn.ReLU() if relu == 0 else nn.LeakyReLU(relu)]
-
-        self.cbr = nn.Sequential(*layers)
+        self.discriminatorblock = nn.Sequential(*layers)
 
     def forward(self, x):
-        return self.cbr(x)
+        return self.discriminatorblock(x)
+
 
 
 class CBR2d(nn.Module):
@@ -165,7 +173,9 @@ class CBR2d(nn.Module):
             elif norm == 'inorm':
                 layers += [nn.InstanceNorm2d(num_features=out_channels)]
 
-        if not relu is None and relu >= 0.0:
+        if relu == 'prelu':
+            layers += [nn.PReLU]
+        elif not relu is None and relu >= 0.0:
             layers += [nn.ReLU() if relu == 0 else nn.LeakyReLU(relu)]
 
         self.cbr = nn.Sequential(*layers)
