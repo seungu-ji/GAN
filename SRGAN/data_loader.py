@@ -39,8 +39,16 @@ class Dataset(torch.utils.data.Dataset):
 
         data = {'label': img}
 
+        if self.task == 'inpainting':
+            data['input'] = add_sampling(data['label'], type=self.opts[0]. opts=self.opts[1])
+        elif self.task == 'denoising':
+            data['input'] = add_noise(data['label'], type=self.opts[0], opts=self.opts[1])
+
         if self.transform:
             data = self.transform(data)
+
+        if self.task == 'super_resolution':
+            data['input'] = add_blur(data['label'], type=opts[0], opts=opts[1])
 
         data = self.to_tensor(data)
 

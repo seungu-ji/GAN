@@ -4,6 +4,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from scipy.stats import poisson
+from skimage.transform import rescale, resize
+
 ## Network grad setting
 def set_requires_grad(nets, requires_grad=False):
     if not isinstance(nets, list):
@@ -13,8 +16,6 @@ def set_requires_grad(nets, requires_grad=False):
         if net is not None:
             for param in net.parameters():
                 param.requires_grad = requires_grad
-
-
 
 ## Network weights 초기화
 def init_weights(net, init_type='normal', init_gain=0.02):
@@ -91,3 +92,90 @@ def gan_load(ckpt_dir, netG, netD, optimG, optimD):
     epoch = int(ckpt_lst[-1].split('epoch')[1].split('.pth')[0])
 
     return netG, netD, optimG, optimD, epoch
+
+## Task
+# Add sampling
+def add_sampling(img, type='random', opts=None):
+    size = img.shape
+
+    if type == 'uniform':
+        ds_y = opts[0].astype(np.int)
+        ds_x = opts[1].astype(np.int)
+
+        msk = np.zeros(img.shape)
+        msk[::ds_y, ::ds_x, :] = 1
+
+        dst = img * msk
+    elif type == 'random':
+        prob = opts[0]
+
+        rnd = np.random.rand(size[0], size[1], size[2])
+        msk = (rnd > prob).astype(np.float)
+
+        dst = img * msk
+    elif type == 'gaussian':
+        x0 = opts[0]
+        y0 = opts[1]
+        sgmx = opts[2]
+        sgmy = opts[3]
+
+        a = opts[4]
+
+        ly = np.linspace(-1, 1, size[0])
+        lx = np.linspace(-1, 1, size[1])
+
+        x, y = np.meshgrid(lx, ly)
+
+        gaus = a * np.exp(-((x - x0)**2/(2*sgmx**2) + (y - y0)**2/(2*sgmy**2)))
+        gaus = np.tile(gaus[:, :, np.newaxis], (1, 1, size[2]))
+        rnd = np.random.rand(size[0], size[1], size[2])
+        msk = (rnd < gaus).astype(np.float)
+
+        dst = img * msk
+
+    return dst
+
+# Add noise
+def add_noise(img, type='random', opts=None):
+    size = img.shape
+
+    if type == 'random':
+        sgm = opts[0]
+
+        noise = sgm / 255.0 * np.random.randn(size[0], size[1], size[2])
+
+        dst = img + noise
+
+    elif type == 'poisson':
+        dst = poisson.rvs(255.0 * img) / 255.0
+        noise = dst - img
+
+    return dst
+
+# Add blurring
+def add_blur(img, type='bilinear', opts=None):
+    if type == 'nearest':
+        order = 0
+    elif type == 'bilinear':
+        order = 1
+    elif type == 'biquadratic':
+        order = 2
+    elif type == 'bicubic':
+        order = 3
+    elif type == 'biquartic':
+        order = 4
+    elif type == 'biquintic':
+        order = 5
+
+    size = img.shape
+    if len(opts) == 1:
+        keepdim = True
+    else:
+        keepdim = opts[1]
+
+    dst = resize(img, output_shape=(size[0] // opts[0], size[1] // opts[1], size[2]), order=order)
+
+    if keepdim:
+        dst = resize(dst, output_shape=(size[0], size[1], size[2]), order=order)
+
+    return dst
