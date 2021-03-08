@@ -40,7 +40,7 @@ class Dataset(torch.utils.data.Dataset):
         data = {'label': img}
 
         if self.task == 'inpainting':
-            data['input'] = add_sampling(data['label'], type=self.opts[0]. opts=self.opts[1])
+            data['input'] = add_sampling(data['label'], type=self.opts[0], opts=self.opts[1])
         elif self.task == 'denoising':
             data['input'] = add_noise(data['label'], type=self.opts[0], opts=self.opts[1])
 
