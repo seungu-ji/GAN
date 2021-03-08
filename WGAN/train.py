@@ -32,7 +32,7 @@ parser.add_argument("--log_dir", default="./log", type=str, dest="log_dir")
 parser.add_argument("--result_dir", default="./result", type=str, dest="result_dir")
 
 parser.add_argument("--task", default="WGAN", choices=['WGAN'], type=str, dest="task")
-parser.add_argument('--opts', nargs='+', default=['bilinear', 4.0, 0], dest='opts')
+#parser.add_argument('--opts', nargs='+', default=['bilinear', 4.0, 0], dest='opts')
 
 parser.add_argument("--ny", default=64, type=int, dest="ny")
 parser.add_argument("--nx", default=64, type=int, dest="nx")
@@ -144,7 +144,7 @@ if mode == 'train':
         netG.train()
         netD.train()
 
-        lose_G_train = []
+        loss_G_train = []
         # loss_D_real_train = []
         # loss_D_fake_train = []
 

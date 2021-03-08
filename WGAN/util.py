@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 ## Network grad setting
-def set_requires_grad(net, requires_grad=False):
+def set_requires_grad(nets, requires_grad=False):
     if not isinstance(nets, list):
         nets = [nets]
 

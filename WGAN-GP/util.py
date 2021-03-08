@@ -34,7 +34,7 @@ def compute_gradient_penalty(discriminator, real_samples, fake_samples):
 
 
 ## Network grad setting
-def set_requires_grad(net, requires_grad=False):
+def set_requires_grad(nets, requires_grad=False):
     if not isinstance(nets, list):
         nets = [nets]
 

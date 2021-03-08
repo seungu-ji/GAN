@@ -35,7 +35,7 @@ parser.add_argument("--log_dir", default="./log", type=str, dest="log_dir")
 parser.add_argument("--result_dir", default="./result", type=str, dest="result_dir")
 
 parser.add_argument("--task", default="CGAN", choices=['CGAN'], type=str, dest="task")
-parser.add_argument('--opts', nargs='+', default=['bilinear', 4.0, 0], dest='opts')
+#parser.add_argument('--opts', nargs='+', default=['bilinear', 4.0, 0], dest='opts')
 
 parser.add_argument("--ny", default=32, type=int, dest="ny")
 parser.add_argument("--nx", default=32, type=int, dest="nx")
